@@ -49,6 +49,7 @@ import os
 import collections
 import json
 import string
+import re
 import psycopg2
 
 
@@ -64,10 +65,10 @@ def connect():
     conn = None
     try:
         print "Connecting to ssm database..."
-        conn = psycopg2.connect(host="xxx.xx.x.xx",
-                                database="xxx",
-                                user="xxx",
-				port ="xxxx")
+        conn = psycopg2.connect(host="",
+                                database="",
+                                user="",
+                                port="")
     except (Exception, psycopg2.DatabaseError) as error:
         print error
     return conn
@@ -130,15 +131,15 @@ def print_row(n, version, sz, last_modified):
 
         Args:
             n: integer row number.
-	    version: version (assumed to be from the current ssm).
+            version: version (assumed to be from the current ssm).
             sz: integer size in bytes of the current ssm as a string.
             last_modified: string represenatation of datetime object.
 
         Returns:
             Nothing
     """
-    print (get_pad1(n) + str(n) + ". " + version  + get_pad2(version, sz) +
-           sz + " " * 13 + last_modified)
+    print (get_pad1(n) + str(n) + ". " + version + get_pad2(version, sz) + sz +
+           " " * 13 + last_modified)
 
 
 def build_output_file_path(dir, version, role, id):
@@ -156,13 +157,14 @@ def build_output_file_path(dir, version, role, id):
             be used as full path to .json file.
     """
     clean_dir = dir.rstrip("/")
-    clean_version = version.strip().translate(None, string.punctuation)
-    clean_version = clean_version.replace(" ", "_")
-    exclude = set(string.punctuation)
-    clean_role = ''.join(ch for ch in role if ch not in exclude)
-    #clean_role = role.strip().translate(None, string.punctuation)
-    clean_role = clean_role.replace(" ", "_")
-    return clean_dir + "/" + clean_version + "-" + clean_role + "-" + str(id) + ".json"
+    punct = string.punctuation
+    junk = punct + " "
+    trantab = string.maketrans(junk, "_________________________________")
+    clean_version = version.strip(junk).translate(trantab)
+    clean_role = role.encode("ascii", "replace").strip(junk).translate(trantab)
+    path = (clean_dir + "/" + clean_version + "-" + clean_role + "-" +
+            str(id) + ".json")
+    return re.sub(r'(_)\1+', r'\1', path)
 
 
 def write_map_to_file(dir, version, role, map_id, d):
@@ -221,7 +223,7 @@ def main():
         name = map[IX_SSM_NAME]
         d = map[IX_DOC]
         if "version" in d and str(d["version"]) == version:
-        # and owner not in [2, 20]: # exclude SC, KHL
+            # and owner not in [2, 20]: # exclude SC, KHL
             n += 1
             sz = str(len(str(d)))
             role = get_role(d)
