@@ -12,7 +12,7 @@ field that matches command line argument "version."
 
 <p>Args:<br>
 &nbsp;&nbsp;&nbsp;&nbsp;version: a string that identifies the "version" of one of
-the ssm family of websites.
+the ssm family of websites.<br>
 &nbsp;&nbsp;&nbsp;&nbsp;output_directory: a directory into which all the ssm .json files are to be written. If it doesn't exist it will be created.
 </p>
 
