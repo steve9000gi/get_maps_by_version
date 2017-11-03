@@ -17,6 +17,14 @@ import re
 import psycopg2
 from get_maps_by_version import connect, get_maps
 
+# Indices in "users" and "maps" tables in "ssm" Postgresql database:
+USERS_ID_IX = 0
+USERS_EMAIL_IX = 1
+USERS_NAME_IX = 5
+USERS_STATE_IX = 6
+USERS_REASON_IX = 13
+MAPS_ID_IX = 0
+MAPS_OWNER_ID = 1
 
 def get_users(sort_index):
     """ Get a list of tuples from the PostgreSQL ssm database, each tuple of
@@ -35,7 +43,6 @@ def get_users(sort_index):
     users = cur.fetchall()
     cur.close()
     conn.close()
-    #print "number of users fetched: " + str(len(users))
     return sorted(users, key=lambda k: k[sort_index])
 
 
@@ -50,7 +57,6 @@ def get_file_list(dir, suffix):
     """
     files = []
     files += [fn for fn in os.listdir(dir) if fn.endswith(suffix)]
-    #for fn in files: print files # temp diagnostic
     return files
 
 
@@ -60,22 +66,13 @@ def get_ssm_ids(ssm_list):
     """
     ids = []
     for fn in ssm_list:
-        #ints = [int(s) for s in fn.split() if s.isdigit()]
         ints = map(int, re.findall(r'\d+', fn))
         ids.append(ints[-1:][0])
-    #for id in ids: print "ssm id: " + str(id)
     return ids
 
 
 def get_owner_id(map_id, maps):
-    MAPS_ID_IX = 0
-    MAPS_OWNER_ID = 1
-    #print type(maps[0]).__name__
     map = [map for map in maps if map[MAPS_ID_IX] == map_id] 
-    #print type(map[0]).__name__
-    #print len(map[0])
-    #print map[0][MAPS_OWNER_ID]
-    #print map
     return map[0][MAPS_OWNER_ID]
 
 
@@ -86,28 +83,16 @@ def get_owner_data(owner_id, owners):
 
 
 def print_headers():
-    print("Map ID\tName\tEmail\tState\tReason for Creating SSM")
+    print("Map ID\tUser ID\tName\tEmail\tState\tReason for Creating SSM")
 
 
 def print_owner_data(mi, od):
-    USERS_ID_IX = 0
-    USERS_EMAIL_IX = 1
-    USERS_NAME_IX = 5
-    USERS_STATE_IX = 6
-    USERS_REASON_IX = 13
-#    print "map id: " + str(mi) + "\towner data: " + od[USERS_NAME_IX]
-    print str(mi) + "\t" + od[USERS_NAME_IX] + "\t" + od[USERS_EMAIL_IX] + "\t" + od[USERS_STATE_IX] + "\t" + od[USERS_REASON_IX]
-#    print "map id: %d; user name: %s; email: %s; state: %s; reason: %s"%(mi, od[USERS_NAME_IX, od[USERS_EMAIL_IX], od[USERS_STATE_IX], od[USERS_REASON_IX])
+    print (str(mi) + "\t" + str(od[USERS_ID_IX]) + "\t" + od[USERS_NAME_IX] +
+           "\t" + od[USERS_EMAIL_IX] + "\t" + od[USERS_STATE_IX] + "\t" +
+           od[USERS_REASON_IX])
 
 
 def main():
-    USERS_ID_IX = 0
-    USERS_EMAIL_IX = 1
-    USERS_NAME_IX = 5
-    USERS_STATE_IX = 6
-    USERS_REASON_IX = 13
-    MAPS_ID_IX = 0
-    MAPS_OWNER_ID = 1
 
     if len(sys.argv) < 3:
         print "usage: get_reg_info.py in_dir out_dir"
